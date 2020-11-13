@@ -4,7 +4,6 @@ use std::{sync::mpsc, thread};
 
 use serde_json::Value;
 
-use bitcoin::secp256k1::{self, Secp256k1};
 use bitcoin::Txid;
 
 #[macro_use]
@@ -14,10 +13,6 @@ pub mod banner;
 pub mod bitcoincore_ext;
 pub mod descriptor;
 pub mod xpub;
-
-lazy_static! {
-    pub static ref EC: Secp256k1<secp256k1::VerifyOnly> = Secp256k1::verification_only();
-}
 
 const VSIZE_BIN_WIDTH: u32 = 50_000; // vbytes
 

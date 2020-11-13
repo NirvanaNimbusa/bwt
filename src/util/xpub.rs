@@ -5,12 +5,12 @@ use std::str::FromStr;
 pub use serde::de;
 
 use bitcoin::util::bip32::{ChildNumber, DerivationPath, ExtendedPubKey, Fingerprint};
-use bitcoin::{util::base58, Address, Network};
-use miniscript::descriptor::{Descriptor, DescriptorPublicKey, DescriptorXPub};
+use bitcoin::{util::base58, Network};
+use miniscript::descriptor::{Descriptor, DescriptorPublicKey};
 
 use crate::types::ScriptType;
-use crate::util::descriptor::ExtendedDescriptor;
-use crate::util::{BoolThen, EC};
+use crate::util::descriptor::{DescriptorXPub, ExtendedDescriptor};
+use crate::util::BoolThen;
 
 pub fn xpub_matches_network(xpub: &ExtendedPubKey, network: Network) -> bool {
     // testnet and regtest share the same bip32 version bytes
@@ -42,7 +42,7 @@ impl XyzPubKey {
 
         let desc_key = DescriptorPublicKey::XPub(DescriptorXPub {
             origin: bip32_origin,
-            xpub: self.xpub,
+            xkey: self.xpub,
             derivation_path,
             is_wildcard: true,
         });
@@ -51,40 +51,6 @@ impl XyzPubKey {
             ScriptType::P2pkh => Descriptor::Pkh(desc_key),
             ScriptType::P2wpkh => Descriptor::Wpkh(desc_key),
             ScriptType::P2shP2wpkh => Descriptor::ShWpkh(desc_key),
-        }
-    }
-
-    /// Convert simple p2*pkh ranged descriptors to their XyzPubKey representation
-    pub fn try_from_desc(desc: &ExtendedDescriptor) -> Option<Self> {
-        let (script_type, desc_xpub) = match desc {
-            Descriptor::Pkh(DescriptorPublicKey::XPub(xpub)) => (ScriptType::P2pkh, xpub),
-            Descriptor::Wpkh(DescriptorPublicKey::XPub(xpub)) => (ScriptType::P2wpkh, xpub),
-            Descriptor::ShWpkh(DescriptorPublicKey::XPub(xpub)) => (ScriptType::P2shP2wpkh, xpub),
-            _ => return None,
-        };
-
-        if !desc_xpub.is_wildcard {
-            return None;
-        }
-
-        Some(XyzPubKey {
-            script_type,
-            xpub: desc_xpub
-                .xpub
-                .derive_pub(&*EC, &desc_xpub.derivation_path)
-                .unwrap(),
-        })
-    }
-
-    /// Get the address of the key at the specified derivation index
-    /// Panics if given a hardened child number
-    pub fn derive_address(&self, index: u32, network: Network) -> Address {
-        let key = self.xpub.ckd_pub(&*EC, index.into()).unwrap();
-        match self.script_type {
-            ScriptType::P2pkh => Address::p2pkh(&key.public_key, network),
-            ScriptType::P2wpkh => Address::p2wpkh(&key.public_key, network).unwrap(),
-            ScriptType::P2shP2wpkh => Address::p2shwpkh(&key.public_key, network).unwrap(),
-            // the two unwraps above can only fail if the public key is non-compressed, which it cannot be.
         }
     }
 }
