@@ -216,7 +216,7 @@ mod jni {
                         env.call_method(
                             &callback,
                             "onSyncProgress",
-                            "(F,I)V",
+                            "(FI)V",
                             &[progress_n.into(), tip.into()],
                         )
                         .unwrap();
@@ -227,7 +227,7 @@ mod jni {
                         env.call_method(
                             &callback,
                             "onScanProgress",
-                            "(F,I)V",
+                            "(FI)V",
                             &[progress_n.into(), eta.into()],
                         )
                         .unwrap();
