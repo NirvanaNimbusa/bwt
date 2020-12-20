@@ -320,6 +320,16 @@ pub struct Config {
     #[serde(default)]
     pub startup_banner: bool,
 
+    // XXX this is not settable as an env var due to https://github.com/clap-rs/clap/issues/1476
+    #[cfg_attr(feature = "cli", structopt(
+        long = "no-require-addresses",
+        help = "Allow the daemon to start without any configured wallets/addresses",
+        parse(from_flag = std::ops::Not::not),
+        display_order(93)
+    ))]
+    #[serde(default)]
+    pub require_addresses: bool,
+
     #[cfg(unix)]
     #[cfg_attr(
         feature = "cli",
@@ -620,7 +630,7 @@ impl From<&Config> for QueryConfig {
 // Create a Default implementation
 defaultable!(Config,
   @default(
-    verbose, timestamp, broadcast_cmd, startup_banner,
+    verbose, timestamp, broadcast_cmd, startup_banner, require_addresses,
     descriptors, xpubs, addresses, addresses_file,
     bitcoind_wallet, bitcoind_dir, bitcoind_url, bitcoind_auth, bitcoind_cookie,
     #[cfg(feature = "electrum")] electrum_addr,
